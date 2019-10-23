@@ -27,10 +27,6 @@ Metadata:
           - JMeterServerInstanceType
           - NumberOfJMeterServers
     ParameterLabels:
-      AWSAccessKeyId:
-        default: AWS Access Key ID
-      AWSAccessKeySecret:
-        default: AWS Access Secret Key
       KeyPairName:
         default: Key Pair Name
       BackendInstanceType:
@@ -225,6 +221,7 @@ Mappings:
   AMIRegions:
     us-east-2:
       Ubuntu1804: ami-0e961fd48b54bd96a
+Parameters:
   KeyPairName:
     Description: >-
       The private key used to log in to instances through SSH
