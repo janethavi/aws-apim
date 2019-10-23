@@ -1,0 +1,288 @@
+# Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Jmeter and Netty backend deployment for performance testing
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Basic Configuration
+        Parameters:
+          - KeyPairName
+          - BackendInstanceType
+          - JMeterClientInstanceType
+          - JMeterServerInstanceType
+          - NumberOfJMeterServers
+    ParameterLabels:
+      AWSAccessKeyId:
+        default: AWS Access Key ID
+      AWSAccessKeySecret:
+        default: AWS Access Secret Key
+      KeyPairName:
+        default: Key Pair Name
+      BackendInstanceType:
+        default: Netty backend Instance Type
+      JMeterClientInstanceType:
+        default: Jmeter Client Instance Type
+      JMeterServerInstanceType:
+        default: Jmeter Server Instance Type
+      NumberOfJMeterServers:
+        default: Number of JMeter Servers Need
+Resources:
+  JMeterVPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+  JMeterPublicSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref JMeterVPC
+      CidrBlock: 10.0.254.0/24
+      AvailabilityZone: !Select
+        - '0'
+        - !GetAZs ''
+  JMeterPublicInternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+  JMeterPublicRouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref JMeterVPC
+    DependsOn:
+      - JMeterVPCInternetGatewayAttachment
+  JMeterPublicSubnetRouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref JMeterPublicRouteTable
+      SubnetId: !Ref JMeterPublicSubnet
+  JMeterPublicRoute:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref JMeterPublicRouteTable
+      GatewayId: !Ref JMeterPublicInternetGateway
+      DestinationCidrBlock: 0.0.0.0/0
+    DependsOn: JMeterVPCInternetGatewayAttachment
+  JMeterVPCInternetGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      InternetGatewayId: !Ref JMeterPublicInternetGateway
+      VpcId: !Ref JMeterVPC
+  JMeterLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      AssociatePublicIpAddress: 'true'
+      ImageId:  !FindInMap
+          - AMIRegions
+          - !Ref 'AWS::Region'
+          - Ubuntu1804
+      InstanceType: !Ref JMeterServerInstanceType
+      KeyName: !Ref KeyPairName
+      SecurityGroups: 
+        - !Ref InstanceSecurityGroup
+      UserData: !Base64
+          'Fn::Sub': |
+              #!/bin/bash
+              exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+              export PATH=~/.local/bin:$PATH
+              apt-get update
+              apt-get -y install python-setuptools python-pip
+              pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+              source /home/ubuntu/Setup/maven.sh
+              bash /home/ubuntu/Setup/Setup.sh
+              #Signal
+              /usr/local/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource JMeterServerAutoScaling --region ${AWS::Region}
+    DependsOn:
+      - JMeterVPCInternetGatewayAttachment
+      - InstanceSecurityGroup
+      - JMeterClient
+  JMeterServerAutoScaling:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      LaunchConfigurationName: !Ref JMeterLaunchConfiguration
+      DesiredCapacity: !Ref NumberOfJMeterServers
+      MinSize: 0
+      MaxSize: 2
+      VPCZoneIdentifier:
+        - !Ref JMeterPublicSubnet
+      Tags:
+        - Key: Name
+          Value: Jmeter-Server
+          PropagateAtLaunch: 'true'
+  InstanceSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref JMeterVPC
+      GroupDescription: Performance Backend-Netty Security Group
+      SecurityGroupIngress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+  JMeterClient:
+    Type: 'AWS::EC2::Instance'
+    CreationPolicy:
+      ResourceSignal:
+        Count: 1
+        Timeout: PT30M
+    Properties:
+      DisableApiTermination: 'false'
+      InstanceInitiatedShutdownBehavior: stop
+      ImageId: !FindInMap
+        - AMIRegions
+        - !Ref 'AWS::Region'
+        - Ubuntu1804
+      InstanceType: !Ref JMeterClientInstanceType
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 100
+            VolumeType: gp2
+            DeleteOnTermination: 'true'
+      KeyName: !Ref KeyPairName
+      Monitoring: 'false'
+      Tags:
+        - Key: Name
+          Value: JMeter-Client
+      NetworkInterfaces:
+        - DeleteOnTermination: 'true'
+          Description: Primary network interface
+          DeviceIndex: 0
+          AssociatePublicIpAddress: 'true'
+          SubnetId: !Ref JMeterPublicSubnet
+          GroupSet:
+            - !Ref InstanceSecurityGroup
+      UserData: !Base64
+        'Fn::Sub': |
+             #!/bin/bash
+             exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+             export PATH=~/.local/bin:$PATH
+             apt-get update
+             apt-get -y install python-setuptools python-pip
+             pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+             source /home/ubuntu/Setup/maven.sh
+             bash /home/ubuntu/Setup/Setup.sh
+             #Signal
+             /usr/local/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource JMeterClient --region ${AWS::Region}
+  BackendInstance:
+    Type: 'AWS::EC2::Instance'
+    CreationPolicy:
+      ResourceSignal:
+        Count: 1
+        Timeout: PT30M
+    Properties:
+      DisableApiTermination: 'false'
+      InstanceInitiatedShutdownBehavior: stop
+      ImageId: !FindInMap
+        - AMIRegions
+        - !Ref 'AWS::Region'
+        - Ubuntu1804
+      InstanceType: !Ref BackendInstanceType
+      KeyName: !Ref KeyPairName
+      Monitoring: 'false'
+      Tags:
+        - Key: Name
+          Value: Backend-Netty
+      NetworkInterfaces:
+        - DeleteOnTermination: 'true'
+          Description: Primary network interface
+          DeviceIndex: 0
+          AssociatePublicIpAddress: 'true'
+          SubnetId: !Ref JMeterPublicSubnet
+          GroupSet:
+            - !Ref InstanceSecurityGroup
+      UserData: !Base64
+        'Fn::Sub': |
+             #!/bin/bash
+             exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+             export PATH=~/.local/bin:$PATH
+             apt-get update
+             apt-get -y install python-setuptools python-pip
+             pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+             source /home/ubuntu/Setup/maven.sh
+             bash /home/ubuntu/Setup/Setup.sh
+             #Signal
+             /usr/local/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource BackendInstance --region ${AWS::Region}
+Outputs:
+  JMeterVPC:
+    Description: The ID of the VPC
+    Value: !Ref JMeterVPC
+  JMeterClient:
+    Description: JMeter Client Public IP
+    Value: !GetAtt JMeterClient.PublicIp
+Mappings:
+  AMIRegions:
+    us-east-2:
+      Ubuntu1804: ami-0e961fd48b54bd96a
+  KeyPairName:
+    Description: >-
+      The private key used to log in to instances through SSH
+    Type: 'AWS::EC2::KeyPair::KeyName'
+  BackendInstanceType:
+    Description: Backend EC2 instance type
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+    ConstraintDescription: Must be a valid EC2 instance type
+  JMeterClientInstanceType:
+    Description: JMeter client EC2 instance type
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+  JMeterServerInstanceType:
+    Description: JMeter server EC2 instance type
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+  NumberOfJMeterServers:
+    Description: The Number of JMeter Servers need
+    Type: String
+    Default: 0
+    AllowedValues:
+      - 0
+      - 1
+      - 2
