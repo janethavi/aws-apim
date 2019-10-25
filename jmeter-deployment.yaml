@@ -104,7 +104,6 @@ Resources:
     DependsOn:
       - JMeterVPCInternetGatewayAttachment
       - InstanceSecurityGroup
-      - JMeterClient
   JMeterServerAutoScaling:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
