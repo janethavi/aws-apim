@@ -23,17 +23,17 @@ Metadata:
         Parameters:
           - KeyPairName
           - BackendInstanceType
-          - JMeterClientInstanceType
-          - JMeterServerInstanceType
+          - JmeterClientInstanceType
+          - JmeterServerInstanceType
           - NumberOfJMeterServers
     ParameterLabels:
       KeyPairName:
         default: Key Pair Name
       BackendInstanceType:
         default: Netty backend Instance Type
-      JMeterClientInstanceType:
+      JmeterClientInstanceType:
         default: Jmeter Client Instance Type
-      JMeterServerInstanceType:
+      JmeterServerInstanceType:
         default: Jmeter Server Instance Type
       NumberOfJMeterServers:
         default: Number of JMeter Servers Need
@@ -85,7 +85,7 @@ Resources:
           - AMIRegions
           - !Ref 'AWS::Region'
           - Ubuntu1804
-      InstanceType: !Ref JMeterServerInstanceType
+      InstanceType: !Ref JmeterServerInstanceType
       KeyName: !Ref KeyPairName
       SecurityGroups: 
         - !Ref InstanceSecurityGroup
@@ -138,7 +138,7 @@ Resources:
         - AMIRegions
         - !Ref 'AWS::Region'
         - Ubuntu1804
-      InstanceType: !Ref JMeterClientInstanceType
+      InstanceType: !Ref JmeterClientInstanceType
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
@@ -242,7 +242,7 @@ Parameters:
       - m3.2xlarge
       - m4.large
     ConstraintDescription: Must be a valid EC2 instance type
-  JMeterClientInstanceType:
+  JmeterClientInstanceType:
     Description: JMeter client EC2 instance type
     Type: String
     Default: t3.micro
@@ -258,7 +258,7 @@ Parameters:
       - m3.xlarge
       - m3.2xlarge
       - m4.large
-  JMeterServerInstanceType:
+  JmeterServerInstanceType:
     Description: JMeter server EC2 instance type
     Type: String
     Default: t3.micro
