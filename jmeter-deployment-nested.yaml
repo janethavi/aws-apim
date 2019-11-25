@@ -260,6 +260,9 @@ Outputs:
   JMeterClient:
     Description: JMeter Client Public IP
     Value: !GetAtt JMeterClient.PublicIp
+  NettyBackend:
+    Description: Netty Backend Public IP
+    Value: !GetAtt BackendInstance.PublicIp
 Mappings:
   AMIRegions:
     us-east-2:
