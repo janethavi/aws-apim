@@ -287,6 +287,9 @@ Outputs:
   GatewayHttpUrl:
     Description: Gateway HTTP Url
     Value: !GetAtt [ ProductStack, Outputs.GatewayHttpUrl ]
+  RDSHost:
+    Description: Gateway HTTP Url
+    Value: !GetAtt [ ProductStack, Outputs.RDSIP ]
 Mappings:
   AMIRegions:
     us-east-2:
