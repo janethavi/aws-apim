@@ -263,6 +263,30 @@ Outputs:
   NettyBackend:
     Description: Netty Backend Public IP
     Value: !GetAtt BackendInstance.PublicIp
+  CarbonServerUrl:
+    Description: Carbon server URL
+    Value: !GetAtt [ ProductStack, Outputs.CarbonServerUrl ]
+  MgtConsoleUrl:
+    Description: Micrograteway URL
+    Value: !GetAtt [ ProductStack, Outputs.MgtConsoleUrl ]
+  PublisherUrl:
+    Description: Publisher Url
+    Value: !GetAtt [ ProductStack, Outputs.PublisherUrl ]
+  StoreUrl:
+    Description: Strore Url
+    Value: !GetAtt [ ProductStack, Outputs.StoreUrl ]
+  AdminUrl:
+    Description: Admin Url
+    Value: !GetAtt [ ProductStack, Outputs.AdminUrl ]
+  KeyManagerUrl:
+    Description: Key Manager Url
+    Value: !GetAtt [ ProductStack, Outputs.KeyManagerUrl ]
+  GatewayHttpsUrl:
+    Description: Gateway HTTPS Url
+    Value: !GetAtt [ ProductStack, Outputs.GatewayHttpsUrl ]
+  GatewayHttpUrl:
+    Description: Gateway HTTP Url
+    Value: !GetAtt [ ProductStack, Outputs.GatewayHttpUrl ]
 Mappings:
   AMIRegions:
     us-east-2:
