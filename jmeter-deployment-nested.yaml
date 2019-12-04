@@ -165,9 +165,7 @@ Resources:
       VpcId: !GetAtt [ ProductStack, Outputs.ProductVPCID ]
       GroupDescription: Performance Backend-Netty Security Group
       SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: '8688'
-          ToPort: '8688'
+        - IpProtocol: -1
           CidrIp: 0.0.0.0/0
   JMeterClient:
     Type: 'AWS::EC2::Instance'
