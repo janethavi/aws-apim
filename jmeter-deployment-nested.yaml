@@ -140,9 +140,6 @@ Resources:
               apt-get -y install python-setuptools python-pip
               pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
               source /home/ubuntu/Setup/maven.sh
-              echo "-----------------------------------------------------------------"
-              whoami
-              sleep 30
               bash /home/ubuntu/Setup/Setup.sh
               #Signal
               /usr/local/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource JMeterServerAutoScaling --region ${AWS::Region}
