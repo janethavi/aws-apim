@@ -409,7 +409,7 @@ Parameters:
     ConstraintDescription: Must be a valid EC2 instance type
   NumberOfJmeterServers:
     Description: The Number of JMeter Servers need(0 or 2)
-    Type: String
+    Type: Number
     Default: 0
     AllowedValues:
       - 0
