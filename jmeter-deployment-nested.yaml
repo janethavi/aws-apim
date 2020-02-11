@@ -37,7 +37,7 @@ Metadata:
           - BackendInstanceType
           - JmeterClientInstanceType
           - JmeterServerInstanceType
-          - NumberOfJMeterServers
+          - NumberOfJmeterServers
     ParameterLabels:
       ProductDeploymentURL:
         default: Product Deployment URL
@@ -67,7 +67,7 @@ Metadata:
         default: Jmeter Client Instance Type
       JmeterServerInstanceType:
         default: Jmeter Server Instance Type
-      NumberOfJMeterServers:
+      NumberOfJmeterServers:
         default: Number of JMeter Servers Need
 Resources:
   ProductStack:
@@ -150,7 +150,7 @@ Resources:
     Type: 'AWS::AutoScaling::AutoScalingGroup'
     Properties:
       LaunchConfigurationName: !Ref JMeterLaunchConfiguration
-      DesiredCapacity: !Ref NumberOfJMeterServers
+      DesiredCapacity: !Ref NumberOfJmeterServers
       MinSize: 0
       MaxSize: 2
       VPCZoneIdentifier:
@@ -407,7 +407,7 @@ Parameters:
       - m3.2xlarge
       - m4.large
     ConstraintDescription: Must be a valid EC2 instance type
-  NumberOfJMeterServers:
+  NumberOfJmeterServers:
     Description: The Number of JMeter Servers need(0 or 2)
     Type: Number
     Default: 0
