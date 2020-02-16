@@ -327,6 +327,7 @@ Parameters:
       - m3.xlarge
       - m3.2xlarge
       - m4.large
+      - c5.large
     ConstraintDescription: Must be a valid EC2 instance type
   ProductDBType:
     Description: If the selected DB Engine is "SQL Server", please use "db.m4.large" as instance type
@@ -342,6 +343,7 @@ Parameters:
       - db.m3.xlarge
       - db.m3.2xlarge
       - db.m4.large
+      - db.m5.large
   JDK:
     Type: String
     Default: "OPEN_JDK8"
@@ -374,6 +376,7 @@ Parameters:
       - m3.xlarge
       - m3.2xlarge
       - m4.large
+      - c5.xlarge
     ConstraintDescription: Must be a valid EC2 instance type
   JmeterClientInstanceType:
     Description: JMeter client EC2 instance type
@@ -390,6 +393,7 @@ Parameters:
       - m3.xlarge
       - m3.2xlarge
       - m4.large
+      - c5.large
     ConstraintDescription: Must be a valid EC2 instance type
   JmeterServerInstanceType:
     Description: JMeter server EC2 instance type
@@ -406,6 +410,7 @@ Parameters:
       - m3.xlarge
       - m3.2xlarge
       - m4.large
+      - c5.large
     ConstraintDescription: Must be a valid EC2 instance type
   NumberOfJMeterServers:
     Description: The Number of JMeter Servers need(0 or 2)
