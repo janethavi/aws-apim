@@ -296,7 +296,7 @@ Parameters:
   KeyPairName:
     Description: Key pair name
     Type: 'AWS::EC2::KeyPair::KeyName'
-    Default: "testgrid-key"
+    Default: "janeth-key"
   ProductDeploymentURL:
     Description: URL of the product deployment cloudformation
     Type: String
